@@ -41,7 +41,6 @@ with st.expander("Stock Picking"):
         ["^TNX"]
     )
 
-
     ticker = options + options_crypto + options_bonds
     start_date = "2023-01-01"
     end_date = "2023-12-31"
@@ -110,6 +109,7 @@ with st.expander("Computation of the Risk Aversion"):
     st.bar_chart(weights_df)
 
 list_of_gtp_responses = []
+list_of_views_from_gpt = []
 with st.expander("Views computations"):
     uploaded_files = st.file_uploader("Choose a pdf file", accept_multiple_files=True)
     for uploaded_file in uploaded_files:
@@ -133,8 +133,22 @@ with st.expander("Views computations"):
     responses_df["annualized_return"] = compute_return_365(responses_df["total_return"],
                                                            responses_df["Forecasting_horizon"])
 
-    print(responses_df.head())
     st.dataframe(responses_df.head(), height=300)
 
+    tickers = data.columns
+
+    for i in range(responses_df['Ticker'].shape[0]):
+        tick_ = responses_df['Ticker'][i]
+        if tick_ in tickers:
+            # Create a view for the stock, the view is a vector of the expected return for that stock
+            view = np.zeros(len(tickers))
+            # Find the index of the stock in the tickers list
+            idx = tickers.index(tick_)
+            # Set the expected return for that stock
+            view[idx] = responses_df['annualized_return'][i]
+
+        print(view)
+
+        list_of_views_from_gpt.append(view)
 
 
