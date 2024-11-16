@@ -27,18 +27,20 @@ class ReportRequest(BaseModel):
     Company_writing_report: str
     Actual_price: float
     Expected_price: float
-    Date_expected_price: str
+    Forecasting_horizon: int
     Currency: str
 
 def ask_gpt(prompt):
     completion = client.beta.chat.completions.parse(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "system", "content": "You are a large langage model designed to help a finance professional"
+                                          " summarize financial reports. Your role is to extract the key information"
+                                          " from the report and provide it to the user in a structured way."},
             {"role": "user", "content": "Can you give me: the stock analyzed, the ticker of the stock,"
-                                        " the report date, the company writting the report,"
-                                        " the expected price of the analyzed stock, the date of the"
-                                        " expected price and the currency of the report?"},
+                                        " the report date (format: YYYY-MM-DD), the company writting the report,"
+                                        " the expected price of the analyzed stock, the"
+                                        " forecasting horizon (in days) and the currency of the report?"},
             {
                 "role": "user",
                 "content": prompt

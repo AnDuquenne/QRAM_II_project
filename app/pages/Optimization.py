@@ -54,7 +54,7 @@ with st.expander("Stock Picking"):
     # Or if 0 instead of nans
     data = data[(data != 0).all(axis=1)]
 
-    st.dataframe(data.head())
+    # st.dataframe(data.head())
 
     constraints = []
 
@@ -92,30 +92,6 @@ with st.expander("Stock Picking"):
 
     st.scatter_chart(x="Volatility", y="Return", data=combined_df, color="Type")
 
-list_of_gtp_responses = []
-with st.expander("Views computations"):
-    uploaded_files = st.file_uploader("Choose a pdf file", accept_multiple_files=True)
-    for uploaded_file in uploaded_files:
-        bytes_data = io.BytesIO(uploaded_file.read())
-        pdf_tokenized = extract_text_with_pdfplumber(bytes_data)
-        response = ask_gpt(pdf_tokenized)
-        print(response)
-        print(response.content)
-        response = json.loads(response.content)
-        print(response)
-        print(type(response))
-        list_of_gtp_responses.append(response)
-
-    # Make a dataframe with the responses
-    responses_df = pd.DataFrame(list_of_gtp_responses,
-                                columns=["Stock_analysed", "Ticker", "Report_date",
-                                         "Company_writing_report", "Actual_price",
-                                         "Expected_price", "Date_expected_price", "Currency"])
-
-    print(responses_df.head())
-    st.dataframe(responses_df.head(), height=300)
-
-
 with st.expander("Computation of the Risk Aversion"):
 
     proportion_risky_asset = st.select_slider(
@@ -132,3 +108,33 @@ with st.expander("Computation of the Risk Aversion"):
     weights_df = pd.DataFrame(opti_weights, index=tickers, columns=["Weights"])
 
     st.bar_chart(weights_df)
+
+list_of_gtp_responses = []
+with st.expander("Views computations"):
+    uploaded_files = st.file_uploader("Choose a pdf file", accept_multiple_files=True)
+    for uploaded_file in uploaded_files:
+        bytes_data = io.BytesIO(uploaded_file.read())
+        pdf_tokenized = extract_text_with_pdfplumber(bytes_data)
+        response = ask_gpt(pdf_tokenized)
+        response = json.loads(response.content)
+        list_of_gtp_responses.append(response)
+
+    # Make a dataframe with the responses
+    responses_df = pd.DataFrame(list_of_gtp_responses,
+                                columns=["Stock_analysed", "Ticker", "Report_date",
+                                         "Company_writing_report", "Actual_price",
+                                         "Expected_price", "Forecasting_horizon", "Currency"])
+
+    # Compute the return as pct change
+    responses_df["total_return"] = (responses_df["Expected_price"] - responses_df["Actual_price"]) / responses_df[
+        "Actual_price"]
+
+    # Compute the annualized return
+    responses_df["annualized_return"] = compute_return_365(responses_df["total_return"],
+                                                           responses_df["Forecasting_horizon"])
+
+    print(responses_df.head())
+    st.dataframe(responses_df.head(), height=300)
+
+
+
