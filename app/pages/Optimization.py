@@ -180,6 +180,14 @@ with st.expander("Views computations"):
         stockflow_result = stockflow_result * (max_ - min_) + min_
         results.append(stockflow_result)
 
+    # Make a view from the stockflow prediction
+    view_stockflow = np.zeros(len(tickers))
+    for i in range(len(options)):
+        idx = np.where(tickers == options[i])[0][0]
+        view_stockflow[idx] = results[i]
+
+    print(view_stockflow)
+
     print("RESULTS ---------")
     print(results)
 
