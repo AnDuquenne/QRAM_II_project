@@ -1,0 +1,3 @@
+[submodule "libs/stockflow"]
+	path = libs/stockflow
+	url = https://github.com/AnDuquenne/Deep-variational-autoencoder-for-stock-return-prediction
