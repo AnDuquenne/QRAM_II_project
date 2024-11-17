@@ -16,9 +16,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from model import MarkowitzMeanVarOptimization
 from utils import *
 from report_analysis import extract_text_with_pdfplumber, ask_gpt, ask_gpt_gamma
+from stockflow_prediction import predict_stockflow
+
+from sklearn.preprocessing import MinMaxScaler
 
 
 st.title('Portfolio Optimization')
+
+# ------------------------------------------------ Stock picking ------------------------------------------------ #
 
 with st.expander("Stock Picking"):
 
@@ -43,7 +48,7 @@ with st.expander("Stock Picking"):
 
     ticker = options + options_crypto + options_bonds
     start_date = "2023-01-01"
-    end_date = "2023-12-31"
+    end_date = "2023-10-31"
     data = yf.download(ticker, start=start_date, end=end_date)
     data = data['Close']
 
@@ -108,6 +113,8 @@ with st.expander("Computation of the Risk Aversion"):
 
     st.bar_chart(weights_df)
 
+# ------------------------------------------------ Views computations ------------------------------------------------ #
+
 list_of_gtp_responses = []
 list_of_views_from_gpt = []
 with st.expander("Views computations"):
@@ -154,4 +161,27 @@ with st.expander("Views computations"):
 
         list_of_views_from_gpt.append(view)
 
+    # Compute views using stockflow
+    date_ = end_date
+    # Recover columns that are included in the "option" list
+    stock_ = data[options].iloc[-8:, :]
+    stock_ = stock_.dropna().iloc[1:, :].values
 
+    results = []
+    for i in range(stock_.shape[1]):
+        stockflow_input = stock_[:, i]
+        # Min max scaling without using MinMaxScaler
+        min_ = stockflow_input.min()
+        max_ = stockflow_input.max()
+        stockflow_input = (stockflow_input - min_) / (max_ - min_)
+
+        stockflow_result = predict_stockflow(date_, stockflow_input)
+        # Reverse the min max scaling
+        stockflow_result = stockflow_result * (max_ - min_) + min_
+        results.append(stockflow_result)
+
+    print("RESULTS ---------")
+    print(results)
+
+    print(date_)
+    print(stock_)
