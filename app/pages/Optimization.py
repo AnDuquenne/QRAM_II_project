@@ -25,7 +25,7 @@ with st.expander("Stock Picking"):
     options = st.multiselect(
         "Choose from dow jones stocks:",
         ["INTC", "AAPL", "MSFT", "AMZN", "WMT", "JPM", "V", "UNH", "HD", "PG", "JNJ", "CRM", "CVX", "KO", "MRK", "CSCO",
-         "MCD", "AXP", "IBM", "GS", "CAT", "DIS", "VZ", "AMGN", "HON", "NKE", "BA", "SHW", "MMM", "TRV",],
+         "MCD", "AXP", "IBM", "GS", "CAT", "DIS", "VZ", "AMGN", "HON", "NKE", "BA", "SHW", "MMM", "TRV", "NVDA"],
         ["INTC", "AAPL", "MSFT"],
     )
 
@@ -53,7 +53,7 @@ with st.expander("Stock Picking"):
     # Or if 0 instead of nans
     data = data[(data != 0).all(axis=1)]
 
-    # st.dataframe(data.head())
+    st.dataframe(data.head())
 
     constraints = []
 
@@ -133,6 +133,9 @@ with st.expander("Views computations"):
     responses_df["annualized_return"] = compute_return_365(responses_df["total_return"],
                                                            responses_df["Forecasting_horizon"])
 
+    # Daily return
+    responses_df["daily_return"] = compute_return_daily(responses_df["total_return"], 1)
+
     st.dataframe(responses_df.head(), height=300)
 
     tickers = data.columns
@@ -142,8 +145,8 @@ with st.expander("Views computations"):
         if tick_ in tickers:
             # Create a view for the stock, the view is a vector of the expected return for that stock
             view = np.zeros(len(tickers))
-            # Find the index of the stock in the tickers list
-            idx = tickers.index(tick_)
+            # Find the index of the stock in the tickers pandas columns list
+            idx = np.where(tickers == tick_)[0][0]
             # Set the expected return for that stock
             view[idx] = responses_df['annualized_return'][i]
 

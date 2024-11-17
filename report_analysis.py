@@ -37,9 +37,11 @@ def ask_gpt(prompt):
             {"role": "system", "content": "You are a large langage model designed to help a finance professional"
                                           " summarize financial reports. Your role is to extract the key information"
                                           " from the report and provide it to the user in a structured way."},
-            {"role": "user", "content": "Can you give me: the stock analyzed, the ticker of the stock,"
-                                        " the report date (format: YYYY-MM-DD), the company writting the report,"
-                                        " the expected price of the analyzed stock, the"
+            {"role": "user", "content": "Can you give me: the stock analyzed, the ticker of the stock (it sould be in "
+                                        "this list (INTC, AAPL, MSFT, AMZN, WMT, JPM, V, UNH, HD, PG, JNJ, CRM, CVX, KO,"
+                                        " MRK, CSCO, MCD, AXP, IBM, GS, CAT, DIS, VZ, AMGN, HON, NKE, BA,"
+                                        " SHW, MMM, TRV, NVDA), the report date (format: YYYY-MM-DD), the company"
+                                        " writting the report, the expected price of the analyzed stock, the"
                                         " forecasting horizon (in days) and the currency of the report?"},
             {
                 "role": "user",
