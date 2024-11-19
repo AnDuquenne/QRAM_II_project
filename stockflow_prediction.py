@@ -140,7 +140,7 @@ def predict_stockflow(date, stock):
     print("x_mean: ", x_mean)
     print("x_std: ", x_std)
 
-    return x_mean
+    return x_mean, x_std
 
 
 if __name__ == "__main__":

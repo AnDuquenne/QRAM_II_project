@@ -117,7 +117,8 @@ with st.expander("Computation of the Risk Aversion"):
 
 list_of_gtp_responses = []
 list_of_views_from_gpt = []
-with st.expander("Views computations"):
+list_std_stockflow = []
+with (((st.expander("Views computations")))):
     uploaded_files = st.file_uploader("Choose a pdf file", accept_multiple_files=True)
     for uploaded_file in uploaded_files:
         bytes_data = io.BytesIO(uploaded_file.read())
@@ -130,7 +131,8 @@ with st.expander("Views computations"):
     responses_df = pd.DataFrame(list_of_gtp_responses,
                                 columns=["Stock_analysed", "Ticker", "Report_date",
                                          "Company_writing_report", "Actual_price",
-                                         "Expected_price", "Forecasting_horizon", "Currency"])
+                                         "Expected_price", "Min_expected_price", "Max_expected_price",
+                                         "Forecasting_horizon", "Currency"])
 
     # Compute the return as pct change
     responses_df["total_return"] = (responses_df["Expected_price"] - responses_df["Actual_price"]) / responses_df[
@@ -143,12 +145,17 @@ with st.expander("Views computations"):
     # Daily return
     responses_df["daily_return"] = compute_return_daily(responses_df["total_return"])
 
+    # Omega scaling
+    responses_df['omega'] \
+        = (responses_df['Max_expected_price'] - responses_df['Min_expected_price']) / responses_df['Expected_price']
+
     st.dataframe(responses_df.head(), height=300)
 
     tickers = data.columns
 
     for i in range(responses_df['Ticker'].shape[0]):
         tick_ = responses_df['Ticker'][i]
+        view = None
         if tick_ in tickers:
             # Create a view for the stock, the view is a vector of the expected return for that stock
             view = np.zeros(len(tickers))
@@ -175,10 +182,11 @@ with st.expander("Views computations"):
         max_ = stockflow_input.max()
         stockflow_input = (stockflow_input - min_) / (max_ - min_)
 
-        stockflow_result = predict_stockflow(date_, stockflow_input)
+        stockflow_result, stockflow_result_std = predict_stockflow(date_, stockflow_input)
         # Reverse the min max scaling
         stockflow_result = stockflow_result * (max_ - min_) + min_
         results.append(stockflow_result)
+        list_std_stockflow.append(stockflow_result_std)
 
     # Make a view from the stockflow prediction
     view_stockflow = np.zeros(len(tickers))
@@ -188,7 +196,9 @@ with st.expander("Views computations"):
 
     # Transform the views into separate vectors
     # [x, 0, 0, y, 0, z] -> [x, 0, 0, 0, 0, 0], [0, 0, 0, y, 0, 0], [0, 0, 0, 0, 0, z]
-    list_of_views_from_gpt = split_vector((np.array(list_of_views_from_gpt, dtype=np.float64).squeeze()))
+    print(f"List of views from gpt: {list_of_views_from_gpt}")
+    print(f"List of views from gpt: {np.array(list_of_views_from_gpt)}")
+    list_of_views_from_gpt = list_of_views_from_gpt
     list_of_views_from_stockflow = split_vector(view_stockflow.astype(np.float64))
 
     print(f"List of views from gpt: {list_of_views_from_gpt}")
@@ -207,3 +217,29 @@ with st.expander("Views computations"):
     st.dataframe(view_stockflow)
 
     st.dataframe(views_df.head(10))
+
+    P = binary_transform(views_df.values)
+    print(P)
+
+    Q = combine_vectors(views_df.values.T)
+    print(Q)
+
+    st.dataframe(P)
+    st.dataframe(Q)
+
+    # ------------------------------------------------ Omega ------------------------------------------------ #
+    # Omega from gpt
+    omega_gpt = responses_df['omega'].values
+
+    # Omega from stockflow
+    omega_stockflow = np.array(list_std_stockflow)
+
+    print(omega_gpt)
+    print(omega_stockflow)
+
+    # Combine the two omegas
+    omega_sacling = np.concatenate((omega_gpt, omega_stockflow), axis=0)
+
+    st.dataframe(omega_sacling)
+    omega = np.diag(omega_sacling) * (0.2**2)
+    st.dataframe(omega)

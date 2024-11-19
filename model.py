@@ -5,7 +5,7 @@ from scipy.optimize import LinearConstraint
 
 
 class MarkowitzMeanVarOptimization:
-    def __init__(self, data, constraints=None):
+    def __init__(self, data, constraints=None, SR_x0=0.25):
         # if there is a column date, make it the index
         self.data = data
         if 'date' in data.columns:
@@ -18,6 +18,12 @@ class MarkowitzMeanVarOptimization:
         self.corr_matrix = np.array(self.data.corr())
         self.cov_matrix = self.corr_matrix * (self.vol.reshape(1, -1).T @ self.vol.reshape(1, -1))
         self.x0 = np.ones(self.mu.shape) / self.mu.shape[0]
+
+        # Black Litterman implied volatility and returns
+        self.SR_x0 = SR_x0
+        self.vol_x0 = np.sqrt(self.x0 @ self.cov_matrix @ self.x0)
+        self.implied_phi = self.SR_x0 / self.vol_x0
+        self.implied_mu
 
         self.constraints = []
 
@@ -50,6 +56,9 @@ class MarkowitzMeanVarOptimization:
         frontier = frontier.T
 
         return frontier
+
+    def gamma_matrix(self, tau):
+        return tau * self.cov_matrix
 
     # Accessors
     def get_vol(self):
