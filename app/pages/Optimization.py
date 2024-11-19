@@ -141,7 +141,7 @@ with st.expander("Views computations"):
                                                            responses_df["Forecasting_horizon"])
 
     # Daily return
-    responses_df["daily_return"] = compute_return_daily(responses_df["total_return"], 1)
+    responses_df["daily_return"] = compute_return_daily(responses_df["total_return"])
 
     st.dataframe(responses_df.head(), height=300)
 
@@ -155,7 +155,7 @@ with st.expander("Views computations"):
             # Find the index of the stock in the tickers pandas columns list
             idx = np.where(tickers == tick_)[0][0]
             # Set the expected return for that stock
-            view[idx] = responses_df['annualized_return'][i]
+            view[idx] = responses_df['daily_return'][i]
 
         print(view)
 
@@ -186,10 +186,24 @@ with st.expander("Views computations"):
         idx = np.where(tickers == options[i])[0][0]
         view_stockflow[idx] = results[i]
 
-    print(view_stockflow)
+    # Transform the views into separate vectors
+    # [x, 0, 0, y, 0, z] -> [x, 0, 0, 0, 0, 0], [0, 0, 0, y, 0, 0], [0, 0, 0, 0, 0, z]
+    list_of_views_from_gpt = split_vector((np.array(list_of_views_from_gpt, dtype=np.float64).squeeze()))
+    list_of_views_from_stockflow = split_vector(view_stockflow.astype(np.float64))
 
-    print("RESULTS ---------")
-    print(results)
+    print(f"List of views from gpt: {list_of_views_from_gpt}")
+    print(f"List of views from stockflow: {list_of_views_from_stockflow}")
 
-    print(date_)
-    print(stock_)
+    # Make a dataframe with the views
+    views_df_gpt = pd.DataFrame(list_of_views_from_gpt, columns=tickers)
+    views_df_stockflow = pd.DataFrame(list_of_views_from_stockflow, columns=tickers)
+
+    # concatenate the two dataframes on the rows
+    views_df = pd.concat([views_df_gpt, views_df_stockflow])
+
+    st.write("View from the rep analysis")
+    st.dataframe(list_of_views_from_gpt)
+    st.write("View from the stockflow prediction")
+    st.dataframe(view_stockflow)
+
+    st.dataframe(views_df.head(10))

@@ -108,7 +108,8 @@ def predict_stockflow(date, stock):
     # -------------------------------------------- Make a prediction -------------------------------------------- #
 
     trainer.set_wandb(False)
-    flow.load_state_dict(torch.load("libs/stockflow/io/StockFlow/2024-05-26_05-02-16/weights/weights.pt"))
+    flow.load_state_dict(torch.load("libs/stockflow/io/StockFlow/2024-05-26_05-02-16/weights/weights.pt",
+                                    map_location=torch.device('cpu')))
     flow.eval().to(device)
 
     # Input is [3: factor; 7 lookback stock]
