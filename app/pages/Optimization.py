@@ -13,20 +13,18 @@ import io
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from model import MarkowitzMeanVarOptimization
+from model import MarkowitzMeanVarOptimization, BlackLittermanOptimization
 from utils import *
 from report_analysis import extract_text_with_pdfplumber, ask_gpt, ask_gpt_gamma
 from stockflow_prediction import predict_stockflow
 
 from sklearn.preprocessing import MinMaxScaler
 
-
 st.title('Portfolio Optimization')
 
 # ------------------------------------------------ Stock picking ------------------------------------------------ #
 
 with st.expander("Stock Picking"):
-
     options = st.multiselect(
         "Choose from dow jones stocks:",
         ["INTC", "AAPL", "MSFT", "AMZN", "WMT", "JPM", "V", "UNH", "HD", "PG", "JNJ", "CRM", "CVX", "KO", "MRK", "CSCO",
@@ -47,7 +45,7 @@ with st.expander("Stock Picking"):
     )
 
     ticker = options + options_crypto + options_bonds
-    start_date = "2023-01-01"
+    start_date = "2019-01-01"
     end_date = "2023-10-31"
     data = yf.download(ticker, start=start_date, end=end_date)
     data = data['Close']
@@ -60,6 +58,9 @@ with st.expander("Stock Picking"):
 
     st.dataframe(data.head())
 
+    # Risk-free rate
+    rf_rate = st.number_input("Risk free rate")
+
     constraints = []
 
     st.subheader("Constraints")
@@ -71,19 +72,13 @@ with st.expander("Stock Picking"):
     if NS:
         constraints.append("No Short Selling")
 
-    MV = MarkowitzMeanVarOptimization(data, constraints)
+    MV = MarkowitzMeanVarOptimization(data, constraints, rf_rate=rf_rate)
     data = MV.get_data()
-    print(data)
-    mu = MV.get_mu()
-    print(mu)
+    mean = MV.get_mu()
     vol = MV.get_vol()
-    print(vol)
     cov = MV.get_cov_matrix()
-    print(cov)
 
     frontier = MV.efficient_frontier_points()
-    print(frontier[0])
-    print(frontier[1])
 
     # Make a dataframe with the frontier
     frontier_df = pd.DataFrame(frontier.T, columns=["Return", "Volatility"])
@@ -91,22 +86,23 @@ with st.expander("Stock Picking"):
     # Merge the individual stock data with the frontier, to plot them together, add a column to frontier df to indicate
     # that these are the efficient frontier points or the individual stocks
     frontier_df["Type"] = "Efficient Frontier"
-    stocks_df = pd.DataFrame({"Return": mu, "Volatility": vol, "Type": "Individual Stocks"})
+    stocks_df = pd.DataFrame({"Return": mean, "Volatility": vol, "Type": "Individual Stocks"})
+    for i in range(stocks_df.shape[0] - 1):
+        stocks_df["Type"].iloc[i] = MV.get_tickers()[i]
+    stocks_df["Type"].iloc[-1] = "Risk Free Asset"
+
     combined_df = pd.concat([frontier_df, stocks_df])
 
     st.scatter_chart(x="Volatility", y="Return", data=combined_df, color="Type")
 
 with st.expander("Computation of the Risk Aversion"):
-
     proportion_risky_asset = st.select_slider(
-        "What maximal percentage of your portfolio should be invested in risky assets?",
-        options=[
-            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5
-        ],
+        "Risk Aversion:",
+        options=([i] for i in range(0, 1000, 10))
     )
 
     opti_weights = MV.efficient_frontier(proportion_risky_asset)[1]
-    tickers = MV.get_tickers()
+    tickers = np.append(MV.get_tickers(), "Risk Free Asset")
 
     # Make a dataframe with the optimal weights
     weights_df = pd.DataFrame(opti_weights, index=tickers, columns=["Weights"])
@@ -164,8 +160,6 @@ with (((st.expander("Views computations")))):
             # Set the expected return for that stock
             view[idx] = responses_df['daily_return'][i]
 
-        print(view)
-
         list_of_views_from_gpt.append(view)
 
     # Compute views using stockflow
@@ -196,13 +190,8 @@ with (((st.expander("Views computations")))):
 
     # Transform the views into separate vectors
     # [x, 0, 0, y, 0, z] -> [x, 0, 0, 0, 0, 0], [0, 0, 0, y, 0, 0], [0, 0, 0, 0, 0, z]
-    print(f"List of views from gpt: {list_of_views_from_gpt}")
-    print(f"List of views from gpt: {np.array(list_of_views_from_gpt)}")
     list_of_views_from_gpt = list_of_views_from_gpt
     list_of_views_from_stockflow = split_vector(view_stockflow.astype(np.float64))
-
-    print(f"List of views from gpt: {list_of_views_from_gpt}")
-    print(f"List of views from stockflow: {list_of_views_from_stockflow}")
 
     # Make a dataframe with the views
     views_df_gpt = pd.DataFrame(list_of_views_from_gpt, columns=tickers)
@@ -219,10 +208,8 @@ with (((st.expander("Views computations")))):
     st.dataframe(views_df.head(10))
 
     P = binary_transform(views_df.values)
-    print(P)
 
     Q = combine_vectors(views_df.values.T)
-    print(Q)
 
     st.dataframe(P)
     st.dataframe(Q)
@@ -234,12 +221,16 @@ with (((st.expander("Views computations")))):
     # Omega from stockflow
     omega_stockflow = np.array(list_std_stockflow)
 
-    print(omega_gpt)
-    print(omega_stockflow)
-
     # Combine the two omegas
     omega_sacling = np.concatenate((omega_gpt, omega_stockflow), axis=0)
 
-    st.dataframe(omega_sacling)
-    omega = np.diag(omega_sacling) * (0.2**2)
-    st.dataframe(omega)
+    # st.dataframe(omega_sacling)
+    omega = np.diag(omega_sacling) * (0.2 ** 2)
+    # st.dataframe(omega)
+
+    MV_black_litterman = BlackLittermanOptimization(data, constraints, rf_rate=rf_rate,
+                                                    P=P, Q=Q, omega=omega, tau=0.05)
+    _, opti_weights = MV_black_litterman.optimize_black_litterman()
+
+    st.write("Optimal weights")
+    st.bar_chart(opti_weights)

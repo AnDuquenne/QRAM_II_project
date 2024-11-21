@@ -71,3 +71,29 @@ def rowwise_multiply(matrix, vector):
         raise ValueError("The number of rows in the matrix must match the length of the vector.")
 
     return matrix * vector[:, np.newaxis]
+
+
+def extend_cov_matrix(matrix: np.array) -> np.array:
+    m_ = np.vstack([matrix, np.zeros(matrix.shape[1])])
+    m_ = np.column_stack([m_, np.zeros(m_.shape[0])])
+    m_[-1, -1] = 1
+    return m_
+
+def extend_vol_vector(vector: np.array) -> np.array:
+    return np.append(vector, 0)
+
+def print_yellow(text):
+    print(f"\033[93m{text}\033[00m")
+
+def print_green(text):
+    print(f"\033[92m{text}\033[00m")
+
+def print_red(text):
+    print(f"\033[91m{text}\033[00m")
+
+def print_blue(text):
+    print(f"\033[94m{text}\033[00m")
+
+def print_purple(text):
+    print(f"\033[95m{text}\033[00m")
+

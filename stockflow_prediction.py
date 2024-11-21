@@ -42,7 +42,7 @@ def predict_stockflow(date, stock):
     # Load the data
     baselines = pd.read_csv('libs/stockflow/Data/Baselines_cleaned_AE.csv')
 
-    print(baselines)
+    # print(baselines)
 
     nb_features_factors = 3
     nb_features_stock = 1
@@ -114,31 +114,31 @@ def predict_stockflow(date, stock):
 
     # Input is [3: factor; 7 lookback stock]
     # 1 Retrieve the factors given the date
-    print(type(baselines.iloc[1, 0]))
+    # print(type(baselines.iloc[1, 0]))
     baselines = baselines.set_index('Date')
-    print(baselines)
+    # print(baselines)
     factors = torch.tensor(baselines.loc[date].values)
     stock = torch.tensor(stock)
     input = torch.concat((factors, stock))
 
-    print("INPUT STOCK FLOW:")
-    print(stock.size())
-    print(factors.size())
-    print(input.size())
+    # print("INPUT STOCK FLOW:")
+    # print(stock.size())
+    # print(factors.size())
+    # print(input.size())
 
     input = input.unsqueeze(0)
 
     input = input.float()
-    print("INPUT STOCK FLOW:")
-    print(input.size())
-    print(input)
+    # print("INPUT STOCK FLOW:")
+    # print(input.size())
+    # print(input)
     input = input.to(device)
 
     x_mean = flow.sample(1000, input).cpu().detach().numpy().squeeze().mean()
     x_std = flow.sample(1000, input).cpu().detach().numpy().squeeze().std()
 
-    print("x_mean: ", x_mean)
-    print("x_std: ", x_std)
+    # print("x_mean: ", x_mean)
+    # print("x_std: ", x_std)
 
     return x_mean, x_std
 
