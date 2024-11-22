@@ -232,5 +232,7 @@ with (((st.expander("Views computations")))):
                                                     P=P, Q=Q, omega=omega, tau=0.05)
     _, opti_weights = MV_black_litterman.optimize_black_litterman()
 
+    # Make a dataframe with the optimal weights
+    opti_weights = pd.DataFrame(opti_weights, index=tickers, columns=["Weights"])
     st.write("Optimal weights")
     st.bar_chart(opti_weights)
