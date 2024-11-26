@@ -188,45 +188,77 @@ with (((st.expander("Views computations")))):
         idx = np.where(tickers == options[i])[0][0]
         view_stockflow[idx] = results[i]
 
+    # User input views
+    list_user_input_views = []
+    list_user_omega = []
+    for i in range(len(tickers)):
+        user_input = st.number_input(f"Expected daily return for {tickers[i]}", value=0.0)
+        user_input_vol = st.number_input(f"Omega for {tickers[i]}", value=0.0)
+        # user_input = compute_return_daily(user_input)
+        list_user_input_views.append(user_input)
+        list_user_omega.append(user_input_vol)
+
     # Transform the views into separate vectors
     # [x, 0, 0, y, 0, z] -> [x, 0, 0, 0, 0, 0], [0, 0, 0, y, 0, 0], [0, 0, 0, 0, 0, z]
     list_of_views_from_gpt = list_of_views_from_gpt
     list_of_views_from_stockflow = split_vector(view_stockflow.astype(np.float64))
+    list_of_user_input_views = split_vector(np.array(list_user_input_views).astype(np.float64))
 
     # Make a dataframe with the views
     views_df_gpt = pd.DataFrame(list_of_views_from_gpt, columns=tickers)
     views_df_stockflow = pd.DataFrame(list_of_views_from_stockflow, columns=tickers)
+    views_df_user = pd.DataFrame(list_of_user_input_views, columns=tickers)
 
     # concatenate the two dataframes on the rows
-    views_df = pd.concat([views_df_gpt, views_df_stockflow])
+    views_df = pd.concat([views_df_stockflow, views_df_gpt, views_df_user])
 
-    st.write("View from the rep analysis")
-    st.dataframe(list_of_views_from_gpt)
-    st.write("View from the stockflow prediction")
-    st.dataframe(view_stockflow)
+    # st.write("View from the rep analysis")
+    # st.dataframe(list_of_views_from_gpt)
+    # st.write("View from the stockflow prediction")
+    # st.dataframe(view_stockflow)
+    # st.write("User input views")
+    # st.dataframe(list_user_input_views)
 
+    st.dataframe(views_df.head(10))
+    st.write("Updated dataframe")
+    views_df, removed_rows = remove_redundent_rows(views_df)
     st.dataframe(views_df.head(10))
 
     P = binary_transform(views_df.values)
 
     Q = combine_vectors(views_df.values.T)
 
+    st.write("P")
     st.dataframe(P)
+    st.write("Q")
     st.dataframe(Q)
 
     # ------------------------------------------------ Omega ------------------------------------------------ #
     # Omega from gpt
-    omega_gpt = responses_df['omega'].values
+    omega_gpt = responses_df['omega'].values * 0.1
 
     # Omega from stockflow
     omega_stockflow = np.array(list_std_stockflow)
 
+    # Omega from user input
+    list_user_omega = np.array(list_user_omega).astype(np.float64)
+    omega_user = list_user_omega[list_user_omega != 0]
+
+    print_blue(omega_gpt)
+    print_blue(omega_stockflow)
+    print_blue(omega_user)
+
     # Combine the two omegas
-    omega_sacling = np.concatenate((omega_gpt, omega_stockflow), axis=0)
+    omega_sacling = np.concatenate((omega_stockflow, omega_gpt, omega_user), axis=0)
+
+    # Removes the rows that are redundant
+    omega_sacling = np.delete(omega_sacling, removed_rows, axis=0)
 
     # st.dataframe(omega_sacling)
-    omega = np.diag(omega_sacling) * (0.2 ** 2)
-    # st.dataframe(omega)
+    omega = np.diag(omega_sacling) * (0.1 ** 1)
+
+    st.write("Omega")
+    st.dataframe(omega)
 
     MV_black_litterman = BlackLittermanOptimization(data, constraints, rf_rate=rf_rate,
                                                     P=P, Q=Q, omega=omega, tau=0.05)

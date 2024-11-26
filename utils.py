@@ -97,3 +97,20 @@ def print_blue(text):
 def print_purple(text):
     print(f"\033[95m{text}\033[00m")
 
+def remove_redundent_rows(data_):
+    data = data_.copy(deep=True)
+    set_index_removed = []
+    for i in range(data.shape[0]):
+        for j in range(data.shape[1]):
+            for k in range(i-1):
+                if 0.00000001 > data.iloc[k, j] > 0.00000001:
+                    # rows to remove
+                    print(k, j)
+                    print(data.iloc[k, j])
+                    set_index_removed.append(i)
+
+    # remove duplicates
+    set_index_removed = list(set(set_index_removed))
+    data = data.drop(set_index_removed)
+
+    return data, set_index_removed
