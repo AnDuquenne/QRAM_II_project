@@ -122,3 +122,29 @@ def remove_redundent_rows(data_):
     data = data.reset_index(drop=True)
 
     return data, set_index_removed
+
+
+sp_rating_to_number = {
+    "AAA": 1,
+    "AA+": 2,
+    "AA": 3,
+    "AA-": 4,
+    "A+": 5,
+    "A": 6,
+    "A-": 7,
+    "BBB+": 8,
+    "BBB": 9,
+    "BBB-": 10,
+    "BB+": 11,
+    "BB": 12,
+    "BB-": 13,
+    "B+": 14,
+    "B": 15,
+    "B-": 16,
+    "CCC+": 17,
+    "CCC": 18,
+    "CCC-": 19,
+    "CC": 20,
+    "C": 21,
+    "D": 22
+}

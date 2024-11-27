@@ -18,7 +18,16 @@ from utils import *
 from report_analysis import extract_text_with_pdfplumber, ask_gpt, ask_gpt_gamma
 from stockflow_prediction import predict_stockflow
 
+import warnings
+
+# Ignore all warnings
+warnings.filterwarnings("ignore")
+
+
 from sklearn.preprocessing import MinMaxScaler
+
+# Load csv credit rating data
+ratings = pd.read_csv("app/io/Dow_Jones_Credit_Ratings_Oct_2023.csv")
 
 st.title('Portfolio Optimization')
 
@@ -56,11 +65,17 @@ with st.expander("Stock Picking"):
     # Or if 0 instead of nans
     data = data[(data != 0).all(axis=1)]
 
+    # Ratings
+    ratings = ratings[ratings['Ticker'].isin(data.columns)][['Ticker', 'S&P Rating', 'S&P Rating Number']]
+
     st.dataframe(data.head())
 
     # Risk-free rate
     rf_rate = st.number_input("Risk free rate")
 
+# ------------------------------------------------ Constraints ------------------------------------------------ #
+
+with st.expander("Constraints"):
     constraints = []
 
     st.subheader("Constraints")
@@ -72,28 +87,68 @@ with st.expander("Stock Picking"):
     if NS:
         constraints.append("No Short Selling")
 
-    MV = MarkowitzMeanVarOptimization(data, constraints, rf_rate=rf_rate)
-    data = MV.get_data()
-    mean = MV.get_mu()
-    vol = MV.get_vol()
-    cov = MV.get_cov_matrix()
+    st.write("Credit rating constraints")
+    checkbox = st.checkbox("Credit rating constraints")
+    percentage_rating = st.number_input(
+        "Minimum percentage of the portfolio held in the range",
+        value=0.8, placeholder="Percentage of the portfolio", min_value=0.0, max_value=1.0
+    )
+    start_rating, end_rating = st.select_slider(
+        "Select the range of credit rating",
+        options=[
+            "AAA",
+            "AA+",
+            "AA",
+            "AA-",
+            "A+",
+            "A",
+            "A-",
+            "BBB+",
+            "BBB",
+            "BBB-",
+            "BB+",
+            "BB",
+            "BB-",
+            "B+",
+            "B",
+            "B-",
+            "CCC+",
+            "CCC",
+            "CCC-",
+            "CC",
+            "C",
+            "D"
+        ],
+        value=("AAA", "BBB"),
+    )
+    st.write(f"Start rating: {start_rating}")
+    st.write(f"End rating: {end_rating}")
+    st.write(f"Number: {percentage_rating}")
 
-    frontier = MV.efficient_frontier_points()
+# ---------------------------------------------- Efficient Frontier --------------------------------------------- #
 
-    # Make a dataframe with the frontier
-    frontier_df = pd.DataFrame(frontier.T, columns=["Return", "Volatility"])
+MV = MarkowitzMeanVarOptimization(data, constraints, ratings, rf_rate=rf_rate)
+if checkbox:
+    MV.set_special_constraints(sp_rating_to_number[start_rating], sp_rating_to_number[end_rating], percentage_rating)
+data = MV.get_data()
+mean = MV.get_mu()
+vol = MV.get_vol()
+cov = MV.get_cov_matrix()
 
-    # Merge the individual stock data with the frontier, to plot them together, add a column to frontier df to indicate
-    # that these are the efficient frontier points or the individual stocks
-    frontier_df["Type"] = "Efficient Frontier"
-    stocks_df = pd.DataFrame({"Return": mean, "Volatility": vol, "Type": "Individual Stocks"})
-    for i in range(stocks_df.shape[0] - 1):
-        stocks_df["Type"].iloc[i] = MV.get_tickers()[i]
-    stocks_df["Type"].iloc[-1] = "Risk Free Asset"
+frontier = MV.efficient_frontier_points()
 
-    combined_df = pd.concat([frontier_df, stocks_df])
+# Make a dataframe with the frontier
+frontier_df = pd.DataFrame(frontier.T, columns=["Return", "Volatility"])
 
-    st.scatter_chart(x="Volatility", y="Return", data=combined_df, color="Type")
+# Merge the individual stock data with the frontier, to plot them together, add a column to frontier df to indicate
+# that these are the efficient frontier points or the individual stocks
+frontier_df["Type"] = "Efficient Frontier"
+stocks_df = pd.DataFrame({"Return": mean, "Volatility": vol, "Type": "Individual Stocks"})
+for i in range(stocks_df.shape[0] - 1):
+    stocks_df["Type"].iloc[i] = MV.get_tickers()[i]
+stocks_df["Type"].iloc[-1] = "Risk Free Asset"
+
+combined_df = pd.concat([frontier_df, stocks_df])
 
 with st.expander("Computation of the Risk Aversion"):
     proportion_risky_asset = st.select_slider(
@@ -101,13 +156,19 @@ with st.expander("Computation of the Risk Aversion"):
         options=([i] for i in range(0, 1000, 10))
     )
 
-    opti_weights = MV.efficient_frontier(proportion_risky_asset)[1]
-    tickers = np.append(MV.get_tickers(), "Risk Free Asset")
+    col_efficient_frontier, col_individual_stocks = st.columns(2)
+    with col_efficient_frontier:
+        st.scatter_chart(x="Volatility", y="Return", data=combined_df, color="Type")
 
-    # Make a dataframe with the optimal weights
-    weights_df = pd.DataFrame(opti_weights, index=tickers, columns=["Weights"])
+    with col_individual_stocks:
 
-    st.bar_chart(weights_df)
+        opti_weights = MV.efficient_frontier(proportion_risky_asset)[1]
+        tickers = np.append(MV.get_tickers(), "Risk Free Asset")
+
+        # Make a dataframe with the optimal weights
+        weights_df = pd.DataFrame(opti_weights, index=tickers, columns=["Weights"])
+
+        st.bar_chart(weights_df)
 
 # ------------------------------------------------ Views computations ------------------------------------------------ #
 
@@ -145,7 +206,7 @@ with (((st.expander("Views computations")))):
     responses_df['omega'] \
         = (responses_df['Max_expected_price'] - responses_df['Min_expected_price']) / responses_df['Expected_price']
 
-    st.dataframe(responses_df.head(), height=300)
+    st.dataframe(responses_df.head(), height=150)
 
     tickers = data.columns
 
@@ -248,10 +309,6 @@ with (((st.expander("Views computations")))):
     list_user_omega = np.array(list_user_omega).astype(np.float64)
     omega_user = list_user_omega[list_user_omega != 0]
 
-    print_blue(omega_gpt)
-    print_blue(omega_stockflow)
-    print_blue(omega_user)
-
     # Combine the two omegas
     omega_sacling = np.concatenate((omega_stockflow, omega_gpt, omega_user), axis=0)
 
@@ -273,8 +330,11 @@ with (((st.expander("Views computations")))):
         st.write("Omega")
         st.dataframe(omega)
 
-    MV_black_litterman = BlackLittermanOptimization(data, constraints, rf_rate=rf_rate,
+    MV_black_litterman = BlackLittermanOptimization(data, constraints, rf_rate=rf_rate, ratings=ratings,
                                                     P=P, Q=Q, omega=omega, tau=0.05)
+    if checkbox:
+        MV_black_litterman.set_special_constraints(sp_rating_to_number[start_rating], sp_rating_to_number[end_rating],
+                                   percentage_rating)
     _, opti_weights = MV_black_litterman.optimize_black_litterman()
 
     # Make a dataframe with the optimal weights

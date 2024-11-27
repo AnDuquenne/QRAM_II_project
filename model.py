@@ -13,9 +13,14 @@ import io
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
+import warnings
+
+# Ignore all warnings
+warnings.filterwarnings("ignore")
+
 
 class MarkowitzMeanVarOptimization:
-    def __init__(self, data, constraints=None, rf_rate=0.02):
+    def __init__(self, data, constraints=None, ratings=None, rf_rate=0.02):
         # if there is a column date, make it the index
         self.data = data
         self.rf_rate = compute_return_daily(rf_rate)
@@ -45,6 +50,7 @@ class MarkowitzMeanVarOptimization:
         if 'No Short Selling' in constraints:
             self.constraints.append(LinearConstraint(np.eye(self.x0.shape[0]), lb=0))
 
+        self.ratings = ratings
 
     def QP(self, x, cov, mu, gamma):
         v = 0.5 * x.T @ cov @ x - gamma * x.T @ mu
@@ -62,11 +68,38 @@ class MarkowitzMeanVarOptimization:
         return np.array([mu_optimized, vol_optimized]), optimized_weights
 
     def efficient_frontier_points(self):
-        gammas = np.linspace(-0.1, 1000, 50)
+        gammas = np.linspace(-0.1, 1500, 50)
         frontier = np.array([self.efficient_frontier(gam)[0] for gam in gammas])
         frontier = frontier.T
 
         return frontier
+
+    def set_special_constraints(self, min_, max_, percentage):
+        # Create the constraints for the special case
+        # 80% in the range of min_ and max_
+        tickers_in_range = np.zeros(self.x0.shape[0])
+        tickers_out_range = np.zeros(self.x0.shape[0])
+        for i in range(self.ticker.shape[0]):
+            tick_ = self.ticker[i]
+            print(tick_)
+            print(self.ratings['Ticker'].values)
+            if tick_ in self.ratings['Ticker'].values:
+                # get the index of the ticker in the ratings DataFrame
+                idx = np.where(self.ratings['Ticker'] == tick_)[0][0]
+                print(idx)
+                print(type(idx))
+                print(self.ratings['S&P Rating Number'].values)
+                print(self.ratings['S&P Rating Number'].values[idx])
+                if min_ <= self.ratings['S&P Rating Number'].values[idx] <= max_:
+                    tickers_in_range[i] = 1
+                else:
+                    tickers_out_range[i] = 1
+
+        # Create the constraints
+        self.constraints.append(LinearConstraint(tickers_in_range, lb=percentage))
+        self.constraints.append(LinearConstraint(tickers_out_range, ub=1 - percentage))
+        # print_red(tickers_out_range)
+        # print_red(tickers_in_range)
 
     # Accessors functions
     def get_vol(self):
@@ -89,7 +122,7 @@ class MarkowitzMeanVarOptimization:
 
 
 class BlackLittermanOptimization:
-    def __init__(self, data, constraints=None, SR_x0=0.25, rf_rate=0.02, P=None, Q=None, omega=None, tau=0.025):
+    def __init__(self, data, constraints=None, ratings=None, SR_x0=0.25, rf_rate=0.02, P=None, Q=None, omega=None, tau=0.025):
         # if there is a column date, make it the index
         self.data = data
         if 'date' in data.columns:
@@ -123,10 +156,10 @@ class BlackLittermanOptimization:
         if omega is None:
             self.mu_bar = None
         else:
-            print_yellow("Gamma matrix: " + str(self.gamma_matrix(tau)))
-            print_yellow("P matrix: " + str(self.P))
-            print_yellow("Q matrix: " + str(self.Q))
-            print_yellow("Omega matrix: " + str(self.omega))
+            # print_yellow("Gamma matrix: " + str(self.gamma_matrix(tau)))
+            # print_yellow("P matrix: " + str(self.P))
+            # print_yellow("Q matrix: " + str(self.Q))
+            # print_yellow("Omega matrix: " + str(self.omega))
             self.mu_bar = (self.implied_mu +
                            (self.gamma_matrix(tau) @ self.P.T) @
                            np.linalg.inv(self.P @ self.gamma_matrix(tau) @ self.P.T + self.omega) @
@@ -142,6 +175,7 @@ class BlackLittermanOptimization:
         if 'No Short Selling' in constraints:
             self.constraints.append(LinearConstraint(np.eye(self.x0.shape[0]), lb=0))
 
+        self.ratings = ratings
 
     def QP(self, x, cov, mu, gamma):
         v = 0.5 * x.T @ cov @ x - gamma * x.T @ mu
@@ -181,6 +215,33 @@ class BlackLittermanOptimization:
             vol_optimized = np.sqrt(optimized_weights @ self.cov_matrix @ optimized_weights)
 
             return np.array([mu_optimized, vol_optimized]), optimized_weights
+
+    def set_special_constraints(self, min_, max_, percentage):
+        # Create the constraints for the special case
+        # 80% in the range of min_ and max_
+        tickers_in_range = np.zeros(self.x0.shape[0])
+        tickers_out_range = np.zeros(self.x0.shape[0])
+        for i in range(self.ticker.shape[0]):
+            tick_ = self.ticker[i]
+            print(tick_)
+            print(self.ratings['Ticker'].values)
+            if tick_ in self.ratings['Ticker'].values:
+                # get the index of the ticker in the ratings DataFrame
+                idx = np.where(self.ratings['Ticker'] == tick_)[0][0]
+                print(idx)
+                print(type(idx))
+                print(self.ratings['S&P Rating Number'].values)
+                print(self.ratings['S&P Rating Number'].values[idx])
+                if min_ <= self.ratings['S&P Rating Number'].values[idx] <= max_:
+                    tickers_in_range[i] = 1
+                else:
+                    tickers_out_range[i] = 1
+
+        # Create the constraints
+        self.constraints.append(LinearConstraint(tickers_in_range, lb=percentage))
+        self.constraints.append(LinearConstraint(tickers_out_range, ub=1 - percentage))
+        # print_red(tickers_out_range)
+        # print_red(tickers_in_range)
 
     def gamma_matrix(self, tau):
         # Remove the risk-free asset
