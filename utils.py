@@ -99,18 +99,26 @@ def print_purple(text):
 
 def remove_redundent_rows(data_):
     data = data_.copy(deep=True)
+    data = data.reset_index(drop=True)
     set_index_removed = []
-    for i in range(data.shape[0]):
+    for i in range(1, data.shape[0]):
         for j in range(data.shape[1]):
-            for k in range(i-1):
-                if 0.00000001 > data.iloc[k, j] > 0.00000001:
-                    # rows to remove
-                    print(k, j)
-                    print(data.iloc[k, j])
-                    set_index_removed.append(i)
+            if data.iloc[i, j] != 0:
+                for k in range(i):
+                    if data.iloc[k, j] != 0:
+                        # rows to remove
+                        print_red(f"{k}, {j}")
+                        print_red(data.iloc[k, j])
+                        set_index_removed.append(k)
 
-    # remove duplicates
+    # remove duplicates in the set_index_removed list
+    print_red(set_index_removed)
     set_index_removed = list(set(set_index_removed))
-    data = data.drop(set_index_removed)
+    print_red(set_index_removed)
+    # remove duplicates
+    for i_ in set_index_removed:
+        data = data.drop(i_)
+
+    data = data.reset_index(drop=True)
 
     return data, set_index_removed
