@@ -191,9 +191,14 @@ with (((st.expander("Views computations")))):
     # User input views
     list_user_input_views = []
     list_user_omega = []
+
     for i in range(len(tickers)):
-        user_input = st.number_input(f"Expected daily return for {tickers[i]}", value=0.0)
-        user_input_vol = st.number_input(f"Omega for {tickers[i]}", value=0.0)
+        st.write(f"{tickers[i]}")
+        col1, col2 = st.columns(2)
+        with col1:
+            user_input = st.number_input(f"Expected daily return", value=0.0, key=f"edr_{i}")
+        with col2:
+            user_input_vol = st.number_input(f"Omega", value=0.0, key=f"omega_{i}")
         # user_input = compute_return_daily(user_input)
         list_user_input_views.append(user_input)
         list_user_omega.append(user_input_vol)
@@ -219,19 +224,18 @@ with (((st.expander("Views computations")))):
     # st.write("User input views")
     # st.dataframe(list_user_input_views)
 
-    st.dataframe(views_df.head(10))
-    st.write("Updated dataframe")
-    views_df, removed_rows = remove_redundent_rows(views_df)
-    st.dataframe(views_df.head(10))
+    coldata, colupdated = st.columns(2)
+    with coldata:
+        st.write("Views dataframe")
+        st.dataframe(views_df.head(10))
+    with colupdated:
+        st.write("Updated dataframe")
+        views_df, removed_rows = remove_redundent_rows(views_df)
+        st.dataframe(views_df.head(10))
 
     P = binary_transform(views_df.values)
 
     Q = combine_vectors(views_df.values.T)
-
-    st.write("P")
-    st.dataframe(P)
-    st.write("Q")
-    st.dataframe(Q)
 
     # ------------------------------------------------ Omega ------------------------------------------------ #
     # Omega from gpt
@@ -257,8 +261,17 @@ with (((st.expander("Views computations")))):
     # st.dataframe(omega_sacling)
     omega = np.diag(omega_sacling) * (0.1 ** 1)
 
-    st.write("Omega")
-    st.dataframe(omega)
+
+    colP, colQ, colOmega = st.columns(3)
+    with colP:
+        st.write("P")
+        st.dataframe(P)
+    with colQ:
+        st.write("Q")
+        st.dataframe(Q)
+    with colOmega:
+        st.write("Omega")
+        st.dataframe(omega)
 
     MV_black_litterman = BlackLittermanOptimization(data, constraints, rf_rate=rf_rate,
                                                     P=P, Q=Q, omega=omega, tau=0.05)
