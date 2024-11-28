@@ -81,15 +81,15 @@ class MarkowitzMeanVarOptimization:
         tickers_out_range = np.zeros(self.x0.shape[0])
         for i in range(self.ticker.shape[0]):
             tick_ = self.ticker[i]
-            print(tick_)
-            print(self.ratings['Ticker'].values)
+            # print(tick_)
+            # print(self.ratings['Ticker'].values)
             if tick_ in self.ratings['Ticker'].values:
                 # get the index of the ticker in the ratings DataFrame
                 idx = np.where(self.ratings['Ticker'] == tick_)[0][0]
-                print(idx)
-                print(type(idx))
-                print(self.ratings['S&P Rating Number'].values)
-                print(self.ratings['S&P Rating Number'].values[idx])
+                # print(idx)
+                # print(type(idx))
+                # print(self.ratings['S&P Rating Number'].values)
+                # print(self.ratings['S&P Rating Number'].values[idx])
                 if min_ <= self.ratings['S&P Rating Number'].values[idx] <= max_:
                     tickers_in_range[i] = 1
                 else:
@@ -97,9 +97,10 @@ class MarkowitzMeanVarOptimization:
 
         # Create the constraints
         self.constraints.append(LinearConstraint(tickers_in_range, lb=percentage))
-        self.constraints.append(LinearConstraint(tickers_out_range, ub=1 - percentage))
-        # print_red(tickers_out_range)
-        # print_red(tickers_in_range)
+        # self.constraints.append(LinearConstraint(tickers_out_range, ub=1 - percentage))
+
+        print_red(tickers_in_range)
+        print_red(tickers_out_range)
 
     # Accessors functions
     def get_vol(self):
@@ -239,7 +240,7 @@ class BlackLittermanOptimization:
 
         # Create the constraints
         self.constraints.append(LinearConstraint(tickers_in_range, lb=percentage))
-        self.constraints.append(LinearConstraint(tickers_out_range, ub=1 - percentage))
+        # self.constraints.append(LinearConstraint(-tickers_out_range, lb=-(1 - percentage)))
         # print_red(tickers_out_range)
         # print_red(tickers_in_range)
 
