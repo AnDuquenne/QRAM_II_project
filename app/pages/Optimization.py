@@ -87,7 +87,6 @@ with st.expander("Constraints"):
     if NS:
         constraints.append("No Short Selling")
 
-    st.write("Credit rating constraints")
     checkbox = st.checkbox("Credit rating constraints")
     percentage_rating = st.number_input(
         "Minimum percentage of the portfolio held in the range",
@@ -121,9 +120,9 @@ with st.expander("Constraints"):
         ],
         value=("AAA", "BBB"),
     )
-    st.write(f"Start rating: {start_rating}")
-    st.write(f"End rating: {end_rating}")
-    st.write(f"Number: {percentage_rating}")
+    # st.write(f"Start rating: {start_rating}")
+    # st.write(f"End rating: {end_rating}")
+    # st.write(f"Number: {percentage_rating}")
 
 # ---------------------------------------------- Efficient Frontier --------------------------------------------- #
 
@@ -150,7 +149,7 @@ stocks_df["Type"].iloc[-1] = "Risk Free Asset"
 
 combined_df = pd.concat([frontier_df, stocks_df])
 
-with st.expander("Computation of the Risk Aversion"):
+with st.expander("Mean Variance Optimization"):
     proportion_risky_asset = st.select_slider(
         "Risk Aversion:",
         options=([i] for i in range(0, 1000, 10))
@@ -175,7 +174,8 @@ with st.expander("Computation of the Risk Aversion"):
 list_of_gtp_responses = []
 list_of_views_from_gpt = []
 list_std_stockflow = []
-with (((st.expander("Views computations")))):
+with (st.expander("Views computations")):
+    ak_ = st.text_input("Your key")
     uploaded_files = st.file_uploader("Choose a pdf file", accept_multiple_files=True)
     for uploaded_file in uploaded_files:
         bytes_data = io.BytesIO(uploaded_file.read())
@@ -254,15 +254,16 @@ with (((st.expander("Views computations")))):
     list_user_omega = []
 
     for i in range(len(tickers)):
-        st.write(f"{tickers[i]}")
-        col1, col2 = st.columns(2)
-        with col1:
-            user_input = st.number_input(f"Expected daily return", value=0.0, key=f"edr_{i}")
-        with col2:
-            user_input_vol = st.number_input(f"Omega", value=0.0, key=f"omega_{i}")
-        # user_input = compute_return_daily(user_input)
-        list_user_input_views.append(user_input)
-        list_user_omega.append(user_input_vol)
+        with st.container():
+            st.write(f"{tickers[i]}")
+            col1, col2 = st.columns(2)
+            with col1:
+                user_input = st.number_input(f"Expected daily return", value=0.0, key=f"edr_{i}")
+            with col2:
+                user_input_vol = st.number_input(f"Omega", value=0.0, key=f"omega_{i}")
+            # user_input = compute_return_daily(user_input)
+            list_user_input_views.append(user_input)
+            list_user_omega.append(user_input_vol)
 
     # Transform the views into separate vectors
     # [x, 0, 0, y, 0, z] -> [x, 0, 0, 0, 0, 0], [0, 0, 0, y, 0, 0], [0, 0, 0, 0, 0, z]
@@ -339,5 +340,7 @@ with (((st.expander("Views computations")))):
 
     # Make a dataframe with the optimal weights
     opti_weights = pd.DataFrame(opti_weights, index=tickers, columns=["Weights"])
+
+with st.expander("Black-Litterman Optimization"):
     st.write("Optimal weights")
     st.bar_chart(opti_weights)

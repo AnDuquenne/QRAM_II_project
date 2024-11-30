@@ -7,10 +7,6 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
-API_KEY = os.getenv("OPENAI_API_KEY")
-
-client = OpenAI(api_key=API_KEY)
 
 def extract_text_with_pdfplumber(file_path):
     text = ""
@@ -32,7 +28,17 @@ class ReportRequest(BaseModel):
     Forecasting_horizon: int
     Currency: str
 
-def ask_gpt(prompt):
+
+def ask_gpt(prompt, ak=None):
+
+    if ak:
+        API_KEY = ak
+    else:
+        load_dotenv()
+        API_KEY = os.getenv("OPENAI_API_KEY")
+
+    client = OpenAI(api_key=API_KEY)
+
     completion = client.beta.chat.completions.parse(
         model="gpt-4o",
         messages=[
@@ -56,44 +62,3 @@ def ask_gpt(prompt):
         response_format=ReportRequest,
     )
     return completion.choices[0].message
-
-
-class GammaRequest(BaseModel):
-    Analyse: str
-    Contextual_factors: str
-    Suggested_gamma_very_risk_averse: float
-    Suggested_gamma_risk_averse: float
-    Suggested_gamma_not_risk_averse: float
-    Suggested_value_of_gamma: float
-    Practical_implication_of_gamma: str
-
-def ask_gpt_gamma(prompt):
-    completion = client.beta.chat.completions.parse(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "You are a large langage model used to help a finance professional."
-                                          " Your goal is to help the user compute the value of the risk aversion for"
-                                          " a portfolio optimization. You should provide detailed analysis using the"
-                                          " personnal information provided by the user"},
-            {"role": "user", "content": "Can you give me: the analysis, the contextual factors, the suggested range of"
-                                        " gamma, the suggested value of gamma and the practical implication of gamma?"},
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        response_format=GammaRequest,
-    )
-    return completion.choices[0].message
-
-# Use the extracted PDF text
-# response = ask_gpt(pdf_text)
-# print(response)
-
-# response = ask_gpt_gamma("Considering that I am a 25 years old student, I woud like to invest 10,000$."
-#                          " I have no house, and consider myself as not too risk averse."
-#                          " What value of gamma would you give me?")
-# print(response)
-#
-# # print a parsed response as json
-# print(response.json())
