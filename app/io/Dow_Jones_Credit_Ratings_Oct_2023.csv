@@ -1,0 +1,31 @@
+Company Name,S&P Rating,Moody's Rating,Fitch Rating,Ticker,S&P Rating Number
+3M Company,AA-,A1,AA-,MMM,4
+American Express,BBB+,A3,A-,AXP,8
+Amgen,A-,Baa1,A-,AMGN,7
+Apple,AA+,Aaa,NR,AAPL,2
+Boeing,BBB-,Baa2,BBB,BA,10
+Caterpillar,A,A2,A,CAT,6
+Chevron,AA,Aa2,AA,CVX,3
+Cisco Systems,AA-,A1,A+,CSCO,4
+Coca-Cola,A+,Aa3,A,KO,5
+Dow Inc.,BBB+,Baa2,BBB+,DOW,8
+Goldman Sachs,BBB+,A2,A,GS,8
+Home Depot,A,A2,A,HD,6
+Honeywell International,A,A2,A,HON,6
+Intel,A+,A1,A+,INTC,5
+International Business Machines (IBM),A-,A3,A-,IBM,7
+Johnson & Johnson,AAA,Aaa,AAA,JNJ,1
+JPMorgan Chase,A-,Aa2,AA-,JPM,7
+McDonald's,BBB+,Baa1,BBB+,MCD,8
+Merck & Co.,A+,A1,A+,MRK,5
+Microsoft,AAA,Aaa,AAA,MSFT,1
+Nike,AA-,A1,NR,NKE,4
+Procter & Gamble,AA-,Aa3,NR,PG,4
+Salesforce,A,A2,NR,CRM,6
+Travelers Companies,AA,Aa2,AA,TRV,3
+UnitedHealth Group,A+,A3,A+,UNH,5
+Verizon Communications,BBB+,Baa1,BBB+,VZ,8
+Visa,AA-,Aa3,NR,V,4
+Walgreens Boots Alliance,BBB,Baa2,BBB,WBA,9
+Walmart,AA,Aa2,AA,WMT,3
+Walt Disney,A-,A2,A-,DIS,7
