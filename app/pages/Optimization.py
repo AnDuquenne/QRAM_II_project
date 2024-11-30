@@ -15,7 +15,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 
 from model import MarkowitzMeanVarOptimization, BlackLittermanOptimization
 from utils import *
-from report_analysis import extract_text_with_pdfplumber, ask_gpt, ask_gpt_gamma
+from report_analysis import extract_text_with_pdfplumber, ask_gpt
 from stockflow_prediction import predict_stockflow
 
 import warnings
