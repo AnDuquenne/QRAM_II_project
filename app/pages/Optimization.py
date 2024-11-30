@@ -170,7 +170,6 @@ with st.expander("Mean Variance Optimization"):
         st.bar_chart(weights_df)
 
 # ------------------------------------------------ Views computations ------------------------------------------------ #
-
 list_of_gtp_responses = []
 list_of_views_from_gpt = []
 list_std_stockflow = []
