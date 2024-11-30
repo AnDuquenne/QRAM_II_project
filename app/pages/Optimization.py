@@ -176,6 +176,10 @@ list_of_views_from_gpt = []
 list_std_stockflow = []
 with (st.expander("Views computations")):
     ak_ = st.text_input("Your key")
+    # if ak_ is none use secret
+    if len(ak_) >= 5 or ak_ is None:
+        ak_ = st.secrets["OAK"]
+
     uploaded_files = st.file_uploader("Choose a pdf file", accept_multiple_files=True)
     for uploaded_file in uploaded_files:
         bytes_data = io.BytesIO(uploaded_file.read())
