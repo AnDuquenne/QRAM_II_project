@@ -31,6 +31,7 @@ class ReportRequest(BaseModel):
 
 def ask_gpt(prompt, ak=None):
 
+    API_KEY = ''
     if ak:
         API_KEY = ak
     else:
