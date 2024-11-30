@@ -36,11 +36,11 @@ from nflows.nn.nets import ResidualNet
 
 def predict_stockflow(date, stock):
     # open the config file
-    with open("libs/stockflow/io/config.yaml", "r") as file:
+    with open("libs/hard_push/io/config.yaml", "r") as file:
         config = yaml.safe_load(file)
 
     # Load the data
-    baselines = pd.read_csv('libs/stockflow/Data/Baselines_cleaned_AE.csv')
+    baselines = pd.read_csv('libs/hard_push/Data/Baselines_cleaned_AE.csv')
 
     # print(baselines)
 
@@ -108,7 +108,7 @@ def predict_stockflow(date, stock):
     # -------------------------------------------- Make a prediction -------------------------------------------- #
 
     trainer.set_wandb(False)
-    flow.load_state_dict(torch.load("libs/stockflow/io/StockFlow/2024-05-26_05-02-16/weights/weights.pt",
+    flow.load_state_dict(torch.load("libs/hard_push/io/StockFlow/2024-05-26_05-02-16/weights/weights.pt",
                                     map_location=torch.device('cpu')))
     flow.eval().to(device)
 
