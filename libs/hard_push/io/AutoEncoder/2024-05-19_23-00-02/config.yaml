@@ -1,0 +1,58 @@
+AutoEncoder:
+  data_path: "Data/Baselines_cleaned.csv"
+  latent_dim: 3
+  compression_factor: 3
+  expansion_factor: 3
+  trainer:
+    nb_epochs: 10000
+    batch_size: 128
+    wandb: True
+    save_path: "io/AutoEncoder/"
+
+FactorVAE:
+  FactorEncoder:
+    LSTM1:
+      hidden_dim: 200
+      num_layers: 2
+      bidirectional: False
+      dropout: 0.2
+    LSTM2:
+      hidden_dim: 200
+      num_layers: 2
+      bidirectional: False
+      dropout: 0.2
+    fc:
+      output_dim: 128
+      dropout: 0.2
+    trainer:
+      nb_epochs: 2000
+      batch_size: 256
+      wandb: True
+      save_path: "io/FactorEncoder/"
+
+  FactorDecoder:
+    LSTM1:
+      hidden_dim: 200
+      num_layers: 2
+      bidirectional: False
+      dropout: 0.2
+    LSTM2:
+      hidden_dim: 200
+      num_layers: 2
+      bidirectional: False
+      dropout: 0.2
+    trainer:
+      nb_epochs: 2000
+      batch_size: 256
+      wandb: True
+      save_path: "io/FactorDecoder/"
+
+  FactorVAE:
+    data_path: "Data/Baselines_cleaned.csv"
+    latent_dim: 3
+    trainer:
+      nb_epochs: 2000
+      batch_size: 128
+      lookback: 10
+      wandb: True
+      save_path: "io/FactorVAE/"
