@@ -175,7 +175,7 @@ list_of_gtp_responses = []
 list_of_views_from_gpt = []
 list_std_stockflow = []
 with (st.expander("Views computations")):
-    ak_ = st.text_input("Your key")
+    ak_ = st.text_input("Your key (optional)")
     # if ak_ is none use secret
     if len(ak_) <= 5 or ak_ is None:
         ak_ = st.secrets["OAK"]
