@@ -205,7 +205,7 @@ with tab_views:
             st.image("app/io/price_range.png")
 
         st.latex(r'''
-        \Omega_\text{scale} = \frac{\text{high}-\text{min}}{\text{mean}}
+        \Omega_\text{scale} = \frac{\text{high}-\text{low}}{\text{mean}}
         ''')
 
         st.markdown('''
