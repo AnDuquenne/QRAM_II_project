@@ -209,7 +209,7 @@ with tab_views:
         ''')
 
         st.markdown('''
-        The mean return is then obtained by computing the equivalent daily return from the forecasting horizon return in the report.\n
+        The mean return is then obtained by computing the equivalent daily return from the forecasting horizon return in the report.
         The value of omega that will be used in the Black-Litterman model is the found value for omega scaled to take values within the range of habitual omega values.
         ''')
 
