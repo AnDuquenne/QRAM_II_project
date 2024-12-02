@@ -229,7 +229,51 @@ with tab_views:
 with tab_maths:
 
     with st.expander("Black-Litterman model"):
-        st.markdown('Explanation of the Black-Litterman model')
+        st.markdown('The Black-Litterman model is a portfolio optimization framework that combines investor views with market equilibrium returns to generate adjusted expected returns for asset allocation, enhancing traditional mean-variance optimization by addressing its sensitivity to input estimates.\n')
+        st.markdown(r'''
+        First, we deduce the vector $\tilde{\mu}$ of implied expected returns.        
+        ''')
+        st.latex(r'''
+        \tilde{\mu}=r+\operatorname{SR}\left(x_0 \mid r\right) \frac{\Sigma x_0}{\sqrt{x_0^{\top} \Sigma x_0}}
+        ''')
+        st.markdown(r'''
+        Where:
+        - $r$ is the risk-free rate
+        - $x_0$ is chosen as the equally weighted portfolio
+        - $\Sigma$ is the covariance matrix, chosen as the empirical covariance matrix
+        - $\operatorname{SR}\left(x_0 \mid r\right)$ is the Sharpe ratio of the equally weighted portfolio
+        ''')
+        st.markdown(r'''
+        The implied risk aversion is then given by:
+        $$
+        \gamma^{-1}=\frac{\operatorname{SR}\left(x_0 \mid r\right)}{\sigma\left(x_0\right)}
+        $$
+        ''')
+        st.markdown(r'''
+        We then compute the views as presented in the views section.\n
+        ''')
+        st.markdown(r'''
+        Given a matrix $\Gamma$, we compute the conditional expected returns $\bar{\mu}$ as:
+        ''')
+        st.latex(r'''
+        \bar{\mu}=\tilde{\mu}+\Gamma P^{\top}\left(P \Gamma P^{\top}+\Omega\right)^{-1}(Q-P \tilde{\mu})
+        ''')
+        st.markdown(r'''
+        and the conditional covariance matrix $\bar{\Sigma}$ as:
+        ''')
+        st.latex(r'''
+        \bar{\Sigma}=\Gamma-\Gamma P^{\top}\left(P \Gamma P^{\top}+\Omega\right)^{-1} P \Gamma
+        ''')
+        st.markdown(r'''
+        We then perform the portfolio optimization using the adjusted expected returns $\bar{\mu}$, the empirical covariance matrix $\tilde{\Sigma}$ and the implied risk aversion $\gamma$.
+        The optimization is done using the following objective function:
+        ''')
+        st.latex(r'''
+        x^{\star}(\gamma)=\quad \arg \min \frac{1}{2} x^{\top} \Sigma x-\gamma x^{\top}\left(\bar{\mu}-r \mathbf{1}_n\right)
+        ''')
+        st.markdown(r'''
+        Under the constraints detailed in the constraints section.
+        ''')
 
     with st.expander("Machine learning algorithm"):
         st.markdown(r'''## The model''')
@@ -254,7 +298,7 @@ with tab_maths:
         st.markdown(r'''
         The factor model aims at describing the likelihood of the factors at time $T+1$ given information up to time $T$.
         These factors can be anything that could give information about the behavior of a stock. In this case, the factor variables are:
-        - **CFE VIX**: The VIX index, also known as the "fear gauge," measures market expectations of near-term volatility conveyed by S&P 500 stock index option prices.
+        - **CFE VIX**: The VIX index, also known as the "fear gauge", measures market expectations of near-term volatility conveyed by S&P 500 stock index option prices.
         - **CBOE SKEW**: Measures the perceived risk of extreme negative market moves, reflecting tail risk in S&P 500 options.
         - **ML MOVE**: Tracks the implied volatility of U.S. Treasury bonds, indicating expected fluctuations in bond prices.
         - **RUSSELL 3000**: Represents the performance of the 3,000 largest U.S. companies, encompassing approximately 98% of the investable U.S. equity market.
@@ -272,3 +316,46 @@ with tab_maths:
         st.markdown('''
         We are looking at the probability of the stock retrun at $T+1$ given our previous prediction using the factor model an the historical returns.
         ''')
+
+    with st.expander("Machine learning algorithm (deep dive)"):
+        st.html(r'''<h3 style="text-align:center;">A deep dive in the model</h3>''')
+        st.markdown('''### The factor model''')
+        st.markdown('''
+        The factor model is divided into two modules:
+        - A compression of the factor variables
+        - A prediction of the factors
+        #### Dimensionality reduction (compression)
+        First the factor variables are reduced in a latent space using a neural network. This latent space is then used to predict the factors.
+        A simple feedforward neural network is used to learn the projection of the factor variables into the latent space.
+        This network, also called an autoencoder, is composed of two parts:
+        - An encoder, which compresses the factor variables into the latent space
+        - A decoder, which reconstructs the factor variables from the latent space
+        The intuition behind this model is that the latent space will capture the most important information of the factor variables.
+        The encoder reduced the dimension of the factor variables, while the decoder tries to reconstruct the original factor variables from this latent space.
+        We denote by $f$ the function that the encoder represents, and by $g$ the function that the decoder represents. Therefore, an optimat autoencoder will be caracterized by:
+        ''')
+        st.latex(r'''
+        \mathbb{E} \left[ || \mathbf{x} - g \circ f(\mathbf{x}) ||^2 \right] \approx 0
+        ''')
+        st.markdown(r'''
+        Given two parameterized mappings $f(\cdot; \theta_f)$ and $g(\cdot;\theta_g)$, training consists of minimizing an empirical estimate of that loss, 
+        ''')
+        st.latex(r'''
+        \theta_f, \theta_g = \arg \min_{\theta_f, \theta_g} \frac{1}{N} \sum_{i=1}^N || \mathbf{x}_i - g(f(\mathbf{x}_i,\theta_f), \theta_g) ||^2.
+        ''')
+        st.markdown('''#### Prediction of the factors''')
+        st.markdown('''
+        Once the factor variables are compressed into the latent space, a neural network is used to predict the factors at time $T+1$.
+        This is done using a variational auto-encoder, a generative model that learns the distribution of the factors.
+        Variational auto-encoders are probabilistic models that learn the distribution of the data, and are used to generate new samples.
+        They work in a similar way as auto-encoders with the exception that map the data into a distribution instead of a fixed point.
+        ''')
+        st.markdown('''### The stock model''')
+        st.markdown('''
+        Once predictions are made for the factors, a neural network is used to predict the stock returns at time $T+1$.
+        This is done using a normalizing flow, a generative model that learns the distribution of the stock returns.
+        It consists in a sequence of invertible transformations that map a simple distribution to the target distribution.
+        In this case, the simple is chosen as a standard normal distribution. 
+        ''')
+        st.divider()
+        st.markdown('''Explain the models more in depth, architecture, loss function and how to sample from it''')
