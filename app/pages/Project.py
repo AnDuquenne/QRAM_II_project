@@ -259,12 +259,6 @@ with tab_maths:
         \bar{\mu}=\tilde{\mu}+\Gamma P^{\top}\left(P \Gamma P^{\top}+\Omega\right)^{-1}(Q-P \tilde{\mu})
         ''')
         st.markdown(r'''
-        and the conditional covariance matrix $\bar{\Sigma}$ as:
-        ''')
-        st.latex(r'''
-        \bar{\Sigma}=\Gamma-\Gamma P^{\top}\left(P \Gamma P^{\top}+\Omega\right)^{-1} P \Gamma
-        ''')
-        st.markdown(r'''
         We then perform the portfolio optimization using the adjusted expected returns $\bar{\mu}$, the empirical covariance matrix $\tilde{\Sigma}$ and the implied risk aversion $\gamma$.
         The optimization is done using the following objective function:
         ''')
