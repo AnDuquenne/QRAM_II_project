@@ -352,4 +352,4 @@ with tab_maths:
         In this case, the simple is chosen as a standard normal distribution. 
         ''')
         st.divider()
-        st.markdown('''Explain the models more in depth, architecture, loss function and how to sample from it''')
+        st.markdown(r'''More information can be found in the [documentation](https://github.com/AnDuquenne/Deep-variational-autoencoder-for-stock-return-prediction/blob/main/Advanced_Data_Sciences.pdf)''')
