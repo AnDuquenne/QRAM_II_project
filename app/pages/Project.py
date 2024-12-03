@@ -348,7 +348,7 @@ with tab_maths:
         st.markdown('''
         Once predictions are made for the factors, a neural network is used to predict the stock returns at time $T+1$.
         This is done using a normalizing flow, a generative model that learns the distribution of the stock returns.
-        It consists in a sequence of invertible transformations that map a simple distribution to the target distribution.
+        It consists in a sequence of invertible transformations (bijective functions) that map a simple distribution to the target distribution.
         In this case, the simple is chosen as a standard normal distribution. 
         ''')
         st.divider()
